@@ -107,18 +107,15 @@ export default function HomePage() {
       <div className="flex md:hidden flex-col h-screen overflow-hidden">
         <MobileAgenda
           year={year}
+          onYearChange={setYear}
           month={month}
-          events={mockEvents}
+          onMonthChange={handleMonthChange}
+          selectedDate={selectedDate}
+          onSelectedDateChange={setSelectedDate}
+          eventDates={eventDates}
+          selectedEvents={selectedEvents}
           filters={filters}
           onFiltersChange={setFilters}
-          onPrev={() => {
-            if (month === 0) { setYear(y => y - 1); setMonth(11); }
-            else setMonth(m => m - 1);
-          }}
-          onNext={() => {
-            if (month === 11) { setYear(y => y + 1); setMonth(0); }
-            else setMonth(m => m + 1);
-          }}
         />
       </div>
     </>

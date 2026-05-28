@@ -1,139 +1,167 @@
 'use client';
 
-import { useState } from 'react';
-import { ArtEvent, CalendarFilters } from '@/types';
-import { EventTypeBadge } from '@/components/calendar/EventTypeBadge';
+import { useRef, useState } from 'react';
+import { ArrowUp } from 'lucide-react';
+import { ArtEvent, CalendarFilters, EventType } from '@/types';
+import { FilterSelect } from '@/components/ui/FilterSelect';
+import MonthStrip from '@/components/calendar/MonthStrip';
+import DateStrip from '@/components/calendar/DateStrip';
+import EventCard from '@/components/events/EventCard';
+import { eventTypeColors } from '@/components/calendar/EventTypeBadge';
+import { EVENT_TYPES, CITIES } from '@/data/mockEvents';
 import EventModal from '@/components/events/EventModal';
-import { MONTH_NAMES } from '@/lib/calendarUtils';
-import FilterBar from '@/components/filters/FilterBar';
+
+const YEARS = [2024, 2025, 2026, 2027, 2028];
+
+const ALL_TYPES: { value: EventType | 'all'; label: string }[] = [
+  { value: 'all', label: 'All Types' },
+  ...EVENT_TYPES.map((t) => ({ value: t, label: eventTypeColors[t].label })),
+];
 
 interface Props {
   year: number;
+  onYearChange: (y: number) => void;
   month: number;
-  events: ArtEvent[];
+  onMonthChange: (m: number) => void;
+  selectedDate: string | null;
+  onSelectedDateChange: (d: string) => void;
+  eventDates: string[];
+  selectedEvents: ArtEvent[];
   filters: CalendarFilters;
   onFiltersChange: (f: CalendarFilters) => void;
-  onPrev: () => void;
-  onNext: () => void;
 }
+
+const titleStyle = {
+  fontFamily: 'var(--font-host-grotesk)',
+  fontWeight: 800,
+  fontSize: 47,
+  lineHeight: '46px',
+  letterSpacing: '-2px',
+} as const;
+
+const navBtnStyle = {
+  fontFamily: 'var(--font-oxygen)',
+  fontWeight: 300,
+  fontSize: 18,
+} as const;
 
 export default function MobileAgenda({
   year,
+  onYearChange,
   month,
-  events,
+  onMonthChange,
+  selectedDate,
+  onSelectedDateChange,
+  eventDates,
+  selectedEvents,
   filters,
   onFiltersChange,
-  onPrev,
-  onNext,
 }: Props) {
-  const [selected, setSelected] = useState<ArtEvent | null>(null);
+  const [modalEvent, setModalEvent] = useState<ArtEvent | null>(null);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  const filtered = events.filter((e) => {
-    if (filters.type !== 'all' && e.type !== filters.type) return false;
-    if (filters.city !== 'all' && e.city !== filters.city) return false;
-    const [y, m] = e.date.split('-').map(Number);
-    return y === year && m - 1 === month;
-  });
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    setIsScrolled(e.currentTarget.scrollTop > 0);
+  };
 
-  const byDay = filtered.reduce<Record<string, ArtEvent[]>>((acc, e) => {
-    if (!acc[e.date]) acc[e.date] = [];
-    acc[e.date].push(e);
-    return acc;
-  }, {});
-
-  const sortedDates = Object.keys(byDay).sort();
+  const scrollToTop = () => {
+    scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   return (
-    <div className="flex flex-col h-full overflow-hidden bg-white">
-      {/* Header */}
-      <header className="flex-none px-4 pt-5 pb-3 border-b border-zinc-200 space-y-3">
-        <div className="flex items-center justify-between">
-          <h1 className="text-zinc-900 text-xl font-bold tracking-tight">
-            {MONTH_NAMES[month]} <span className="text-zinc-400 font-normal">{year}</span>
-          </h1>
-          <div className="flex gap-1">
-            <MobileNavBtn onClick={onPrev}>
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </MobileNavBtn>
-            <MobileNavBtn onClick={onNext}>
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </MobileNavBtn>
-          </div>
-        </div>
-        <FilterBar filters={filters} onChange={onFiltersChange} />
-      </header>
+    <div className="relative flex flex-col h-full overflow-hidden" style={{ backgroundColor: '#fbfaf6' }}>
 
-      {/* Agenda list */}
-      <div className="flex-1 overflow-y-auto">
-        {sortedDates.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-48 text-zinc-400 text-sm">
-            No events match your filters
-          </div>
-        ) : (
-          <div className="divide-y divide-zinc-100">
-            {sortedDates.map((dateStr) => {
-              const [y, m, d] = dateStr.split('-').map(Number);
-              const date = new Date(y, m - 1, d);
-              const dayLabel = date.toLocaleDateString('en-GB', {
-                weekday: 'short',
-                day: 'numeric',
-                month: 'short',
-              });
-              return (
-                <div key={dateStr}>
-                  <div className="px-4 py-2 text-[11px] font-semibold uppercase tracking-widest text-zinc-400 bg-zinc-50 sticky top-0 border-b border-zinc-100">
-                    {dayLabel}
-                  </div>
-                  {byDay[dateStr].map((event) => (
-                    <button
-                      key={event.id}
-                      onClick={() => setSelected(event)}
-                      className="w-full flex gap-3 px-4 py-3 hover:bg-zinc-50 transition-colors text-left"
-                    >
-                      {event.image && (
-                        <div className="w-16 h-16 rounded-lg overflow-hidden shrink-0">
-                          <img
-                            src={event.image}
-                            alt=""
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0 space-y-1">
-                        <EventTypeBadge type={event.type} />
-                        <p className="text-zinc-900 text-sm font-semibold leading-snug line-clamp-2">
-                          {event.title}
-                        </p>
-                        <p className="text-zinc-500 text-xs">
-                          {event.startTime} · {event.city}
-                        </p>
-                        {event.price && (
-                          <p className="text-zinc-400 text-xs">{event.price}</p>
-                        )}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              );
-            })}
-          </div>
-        )}
+      {/* ── Title bar — always visible, fixed height ── */}
+      <div className="flex-none relative px-6 pt-6 pb-3">
+        <button className="absolute left-6 text-black" style={{ ...navBtnStyle, top: 19 }}>Name</button>
+        <h1 className="text-center text-black lowercase" style={{ ...titleStyle, transform: 'translateY(5px)' }}>
+          the big<br />art calendar.
+        </h1>
+        <button className="absolute right-6 text-black" style={{ ...navBtnStyle, top: 19 }}>Menu</button>
+
+        {/* Border fades in when scrolled — no layout shift */}
+        <div
+          className="absolute bottom-0 left-0 right-0 h-px bg-[#b1b1b1] transition-opacity duration-300"
+          style={{ opacity: isScrolled ? 1 : 0 }}
+        />
       </div>
 
-      <EventModal event={selected} onClose={() => setSelected(null)} />
-    </div>
-  );
-}
+      {/* ── Scrollable area: controls + cards ── */}
+      <div
+        ref={scrollRef}
+        className="flex-1 min-h-0 overflow-y-auto"
+        onScroll={handleScroll}
+      >
+        {/* Controls scroll away naturally — no layout reflow */}
+        <div className="flex items-center justify-between px-2 pt-[20px] pb-3">
+          <FilterSelect
+            size="sm"
+            value={filters.city}
+            onChange={(v) => onFiltersChange({ ...filters, city: v ?? 'all' })}
+            options={[{ value: 'all', label: 'All Cities' }, ...CITIES.map((c) => ({ value: c, label: c }))]}
+          />
+          <FilterSelect
+            size="sm"
+            value={filters.type}
+            onChange={(v) => onFiltersChange({ ...filters, type: (v ?? 'all') as EventType | 'all' })}
+            options={ALL_TYPES}
+          />
+          <FilterSelect
+            size="sm"
+            value={String(year)}
+            onChange={(v) => onYearChange(Number(v ?? year))}
+            options={YEARS.map((y) => ({ value: String(y), label: String(y) }))}
+          />
+        </div>
 
-function MobileNavBtn({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      onClick={onClick}
-      className="w-8 h-8 flex items-center justify-center rounded-full text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition-all"
-    >
-      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        {children}
-      </svg>
-    </button>
+        <MonthStrip month={month} onChange={onMonthChange} scrollable />
+        <DateStrip
+          eventDates={eventDates}
+          selectedDate={selectedDate}
+          onChange={onSelectedDateChange}
+          fullDayNames
+        />
+
+        {/* Event cards */}
+        <div className="px-6 py-6">
+          {selectedEvents.length === 0 ? (
+            <div
+              className="flex items-center justify-center h-48 text-black/40"
+              style={{ fontFamily: 'var(--font-oxygen)', fontWeight: 300, fontSize: 16 }}
+            >
+              {eventDates.length === 0 ? 'No events this month' : 'Select a date above'}
+            </div>
+          ) : (
+            <div className="flex flex-col gap-6">
+              {selectedEvents.map((event) => (
+                <EventCard
+                  key={event.id}
+                  event={event}
+                  onClick={setModalEvent}
+                  fullWidth
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── Scroll-to-top FAB — fades in, no layout shift ── */}
+      <button
+        onClick={scrollToTop}
+        className="absolute bottom-9 right-6 bg-black rounded-full p-3 flex items-center justify-center transition-all duration-300"
+        style={{
+          opacity: isScrolled ? 1 : 0,
+          pointerEvents: isScrolled ? 'auto' : 'none',
+          transform: isScrolled ? 'scale(1)' : 'scale(0.75)',
+        }}
+        aria-label="Scroll to top"
+      >
+        <ArrowUp className="size-6 text-white" strokeWidth={2} />
+      </button>
+
+      <EventModal event={modalEvent} onClose={() => setModalEvent(null)} />
+    </div>
   );
 }

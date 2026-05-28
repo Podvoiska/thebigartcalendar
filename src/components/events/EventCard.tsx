@@ -15,24 +15,26 @@ function getCardColor(id: string): string {
 interface Props {
   event: ArtEvent;
   onClick: (e: ArtEvent) => void;
+  fullWidth?: boolean;
 }
 
-export default function EventCard({ event, onClick }: Props) {
+export default function EventCard({ event, onClick, fullWidth = false }: Props) {
   const bgColor = getCardColor(event.id);
 
   return (
     <button
       onClick={() => onClick(event)}
-      className="text-left flex-none h-full"
-      style={{ width: 346 }}
+      className={fullWidth ? 'w-full text-left' : 'text-left flex-none h-full'}
+      style={fullWidth ? undefined : { width: 346 }}
     >
       <div
-        className="w-full h-full flex flex-col"
+        className="w-full flex flex-col"
         style={{
           backgroundColor: bgColor,
           borderRadius: 24,
           padding: 24,
           gap: 16,
+          height: fullWidth ? 460 : '100%',
           maxHeight: 460,
         }}
       >

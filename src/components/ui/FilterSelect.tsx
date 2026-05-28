@@ -7,19 +7,25 @@ export function FilterSelect({
   value,
   onChange,
   options,
+  size = 'md',
 }: {
   value: string;
   onChange: (v: string | null) => void;
   options: { value: string; label: string }[];
+  size?: 'sm' | 'md';
 }) {
   const label = options.find((o) => o.value === value)?.label ?? value;
+  const textStyle =
+    size === 'sm'
+      ? { fontSize: 24, lineHeight: '24px', letterSpacing: '-0.48px' }
+      : { fontSize: 32, lineHeight: '32px', letterSpacing: '-0.64px' };
 
   return (
     <SelectPrimitive.Root value={value} onValueChange={onChange}>
       <SelectPrimitive.Trigger className="flex items-center gap-[5px] px-[8px] py-[6px] rounded-[8px] cursor-pointer outline-none select-none transition-colors hover:bg-[#ecebe4] aria-expanded:bg-[#ecebe4]">
         <span
-          className="font-extrabold text-[32px] leading-[32px] tracking-[-0.64px] text-black whitespace-nowrap"
-          style={{ fontFamily: 'var(--font-host-grotesk)' }}
+          className="font-extrabold text-black whitespace-nowrap"
+          style={{ fontFamily: 'var(--font-host-grotesk)', ...textStyle }}
         >
           {label}
         </span>

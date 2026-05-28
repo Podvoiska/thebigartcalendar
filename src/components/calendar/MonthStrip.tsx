@@ -1,22 +1,46 @@
 'use client';
 
+import { useRef, useEffect } from 'react';
+import { springScrollTo } from '@/lib/springScroll';
+
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 interface Props {
   month: number; // 0-indexed
   onChange: (m: number) => void;
+  scrollable?: boolean;
 }
 
-export default function MonthStrip({ month, onChange }: Props) {
+export default function MonthStrip({ month, onChange, scrollable = false }: Props) {
+  const stripRef = useRef<HTMLDivElement>(null);
+  const activeRef = useRef<HTMLButtonElement>(null);
+  const cancelRef = useRef<(() => void) | null>(null);
+
+  useEffect(() => {
+    const strip = stripRef.current;
+    const active = activeRef.current;
+    if (!strip || !active || !scrollable) return;
+    cancelRef.current?.();
+    const target = active.offsetLeft - strip.offsetWidth / 2 + active.offsetWidth / 2;
+    cancelRef.current = springScrollTo(strip, target);
+    return () => cancelRef.current?.();
+  }, [month, scrollable]);
+
   return (
-    <div className="flex-none flex items-center justify-center gap-6 border-t border-b border-zinc-200 h-[84px]">
+    <div
+      ref={stripRef}
+      className={`flex-none flex items-center border-t border-b border-[#b1b1b1] h-[84px] ${
+        scrollable ? 'overflow-x-auto scrollbar-hide gap-[44px] px-6' : 'justify-center gap-6'
+      }`}
+    >
       {MONTHS.map((name, i) => {
         const isActive = i === month;
         return (
           <button
             key={i}
+            ref={isActive ? activeRef : null}
             onClick={() => onChange(i)}
-            className="transition-colors"
+            className="flex-none transition-colors"
             style={{
               fontFamily: 'var(--font-oxygen)',
               fontWeight: isActive ? 700 : 300,
