@@ -34,7 +34,7 @@ export function FilterSelect({
           alignItemWithTrigger={false}
           className="isolate z-50"
         >
-          <SelectPrimitive.Popup className="bg-[#ecebe4] rounded-[12px] p-[8px] min-w-[140px] outline-none">
+          <SelectPrimitive.Popup className="bg-[#ecebe4] rounded-[12px] p-[8px] w-(--anchor-width) outline-none">
             <SelectPrimitive.List>
               {options.map((opt) => (
                 <SelectPrimitive.Item
