@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { ArrowUp, Plus } from 'lucide-react';
+import { ArrowUp } from 'lucide-react';
 import { ArtEvent, CalendarFilters, EventType } from '@/types';
 import { FilterSelect } from '@/components/ui/FilterSelect';
 import MonthStrip from '@/components/calendar/MonthStrip';
@@ -31,22 +31,7 @@ interface Props {
   filters: CalendarFilters;
   onFiltersChange: (f: CalendarFilters) => void;
   cities: string[];
-  onMenuOpen: () => void;
 }
-
-const titleStyle = {
-  fontFamily: 'var(--font-host-grotesk)',
-  fontWeight: 800,
-  fontSize: 47,
-  lineHeight: '46px',
-  letterSpacing: '-2px',
-} as const;
-
-const navBtnStyle = {
-  fontFamily: 'var(--font-oxygen)',
-  fontWeight: 300,
-  fontSize: 18,
-} as const;
 
 export default function MobileAgenda({
   year,
@@ -60,7 +45,6 @@ export default function MobileAgenda({
   filters,
   onFiltersChange,
   cities,
-  onMenuOpen,
 }: Props) {
   const [modalEvent, setModalEvent] = useState<ArtEvent | null>(null);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -76,28 +60,6 @@ export default function MobileAgenda({
 
   return (
     <div className="relative flex flex-col h-full overflow-hidden" style={{ backgroundColor: '#fbfaf6' }}>
-
-      {/* ── Title bar — always visible, fixed height ── */}
-      <div className="flex-none relative px-6 pt-6 pb-3">
-        <button className="absolute left-6 text-black" style={{ ...navBtnStyle, top: 19 }}>Name</button>
-        <h1 className="text-center text-black lowercase" style={{ ...titleStyle, transform: 'translateY(5px)' }}>
-          the big<br />art calendar.
-        </h1>
-        <button
-          onClick={onMenuOpen}
-          aria-label="Open menu"
-          className="absolute right-[6px] flex items-center justify-center size-[54px] text-black hover:opacity-60 transition-opacity"
-          style={{ top: 6 }}
-        >
-          <Plus className="size-7" strokeWidth={2} />
-        </button>
-
-        {/* Border fades in when scrolled — no layout shift */}
-        <div
-          className="absolute bottom-0 left-0 right-0 h-px bg-[#b1b1b1] transition-opacity duration-300"
-          style={{ opacity: isScrolled ? 1 : 0 }}
-        />
-      </div>
 
       {/* ── Scrollable area: controls + cards ── */}
       <div
@@ -159,7 +121,7 @@ export default function MobileAgenda({
         </div>
       </div>
 
-      {/* ── Scroll-to-top FAB — fades in, no layout shift ── */}
+      {/* ── Scroll-to-top FAB ── */}
       <button
         onClick={scrollToTop}
         className="absolute bottom-9 right-6 bg-black rounded-full p-3 flex items-center justify-center transition-all duration-300"

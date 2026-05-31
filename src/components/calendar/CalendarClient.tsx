@@ -4,7 +4,6 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { ArrowUp } from 'lucide-react';
 import { ArtEvent, CalendarFilters } from '@/types';
 import AppHeader from '@/components/layout/AppHeader';
-import MenuPanel from '@/components/layout/MenuPanel';
 import MonthStrip from '@/components/calendar/MonthStrip';
 import DateStrip from '@/components/calendar/DateStrip';
 import EventCard from '@/components/events/EventCard';
@@ -25,7 +24,6 @@ export default function CalendarClient({ events, cities }: Props) {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [filters, setFilters] = useState<CalendarFilters>(DEFAULT_FILTERS);
   const [modalEvent, setModalEvent] = useState<ArtEvent | null>(null);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -46,17 +44,14 @@ export default function CalendarClient({ events, cities }: Props) {
       const start = new Date(e.date);
       const end = e.endDate ? new Date(e.endDate) : start;
 
-      // Event must overlap with this month
       if (start > lastOfMonth || end < firstOfMonth) return false;
-
       if (filters.type !== 'all' && e.type !== filters.type) return false;
       if (filters.city !== 'all' && e.city !== filters.city) return false;
       return true;
     });
   }, [events, year, month, filters]);
 
-  // Unique sorted dates for the DateStrip.
-  // Spanning events that started before this month are pinned to the 1st.
+  // Unique sorted dates — spanning events pinned to 1st of month
   const eventDates = useMemo(() => {
     const firstOfMonth = `${year}-${String(month + 1).padStart(2, '0')}-01`;
     const dates = monthEvents.map((e) => {
@@ -68,16 +63,13 @@ export default function CalendarClient({ events, cities }: Props) {
 
   // Auto-select first event date when month/filters change
   useEffect(() => {
-    if (eventDates.length === 0) {
-      setSelectedDate(null);
-      return;
-    }
+    if (eventDates.length === 0) { setSelectedDate(null); return; }
     if (selectedDate && eventDates.includes(selectedDate)) return;
     const todayStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
     setSelectedDate(eventDates.includes(todayStr) ? todayStr : eventDates[0]);
   }, [eventDates]);
 
-  // Events for the selected date (respecting the same pinning logic)
+  // Events for the selected date
   const selectedEvents = useMemo(() => {
     if (!selectedDate) return [];
     const firstOfMonth = `${year}-${String(month + 1).padStart(2, '0')}-01`;
@@ -96,9 +88,9 @@ export default function CalendarClient({ events, cities }: Props) {
   return (
     <>
       {/* ── Desktop ─────────────────────────────────────── */}
-      <div className="hidden md:flex flex-col h-screen overflow-hidden relative" style={{ backgroundColor: '#FBFAF6' }}>
+      <div className="hidden md:flex flex-col h-full overflow-hidden relative" style={{ backgroundColor: '#FBFAF6' }}>
 
-        {/* Title bar — always visible, fading bottom border on scroll */}
+        {/* Filters bar with fading bottom border on scroll */}
         <div className="flex-none relative">
           <AppHeader
             year={year}
@@ -106,7 +98,6 @@ export default function CalendarClient({ events, cities }: Props) {
             filters={filters}
             onFiltersChange={setFilters}
             cities={cities}
-            onMenuOpen={() => setIsMenuOpen(true)}
           />
           <div
             className="absolute bottom-0 left-0 right-0 h-px bg-[#b1b1b1] transition-opacity duration-300"
@@ -114,19 +105,14 @@ export default function CalendarClient({ events, cities }: Props) {
           />
         </div>
 
-        {/* Scrollable area: month strip + date strip + cards */}
+        {/* Scrollable: month strip + date strip + cards */}
         <div
           ref={scrollRef}
           className="flex-1 min-h-0 overflow-y-auto"
           onScroll={handleScroll}
         >
           <MonthStrip month={month} onChange={handleMonthChange} />
-
-          <DateStrip
-            eventDates={eventDates}
-            selectedDate={selectedDate}
-            onChange={setSelectedDate}
-          />
+          <DateStrip eventDates={eventDates} selectedDate={selectedDate} onChange={setSelectedDate} />
 
           <main className="px-6 py-4">
             {selectedEvents.length === 0 ? (
@@ -164,7 +150,7 @@ export default function CalendarClient({ events, cities }: Props) {
       </div>
 
       {/* ── Mobile ──────────────────────────────────────── */}
-      <div className="flex md:hidden flex-col h-screen overflow-hidden">
+      <div className="flex md:hidden flex-col h-full overflow-hidden">
         <MobileAgenda
           year={year}
           onYearChange={setYear}
@@ -177,12 +163,8 @@ export default function CalendarClient({ events, cities }: Props) {
           filters={filters}
           onFiltersChange={setFilters}
           cities={cities}
-          onMenuOpen={() => setIsMenuOpen(true)}
         />
       </div>
-
-      {/* Single MenuPanel — always in DOM for SEO, shared across breakpoints */}
-      <MenuPanel isOpen={isMenuOpen} onClose={() => setIsMenuOpen(false)} />
     </>
   );
 }

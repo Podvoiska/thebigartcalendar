@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Host_Grotesk, Oxygen } from "next/font/google";
+import RootHeader from "@/components/layout/RootHeader";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -39,7 +40,10 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} ${hostGrotesk.variable} ${oxygen.variable} h-full antialiased`}
     >
-      <body className="h-full text-zinc-900" style={{ backgroundColor: '#FBFAF6' }}>{children}</body>
+      <body className="h-full flex flex-col text-zinc-900" style={{ backgroundColor: '#FBFAF6' }}>
+        <RootHeader />
+        <div className="flex-1 min-h-0">{children}</div>
+      </body>
     </html>
   );
 }

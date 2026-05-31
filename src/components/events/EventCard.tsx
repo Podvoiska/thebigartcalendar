@@ -24,7 +24,7 @@ export default function EventCard({ event, onClick, fullWidth = false }: Props) 
   return (
     <button
       onClick={() => onClick(event)}
-      className="w-full text-left"
+      className="w-full max-w-[346px] text-left"
     >
       <div
         className="w-full flex flex-col"
