@@ -1,0 +1,40 @@
+# Architecture
+
+A map of the system. Deeper detail lives in the linked docs.
+
+## Stack
+- Next.js 16.2.6 (App Router) + React 19.2.4, Tailwind v4, shadcn/Base UI, lucide-react
+- Neon (serverless Postgres) via Drizzle ORM
+- Vercel — hosting + Blob image storage
+- Anthropic SDK — event extraction inside the scraper
+
+## Data flow
+```
+art websites → scraper (GitHub Actions, daily) → Neon `events` table
+                                                       │
+                                          Next.js server components (SSR)
+                                                       │
+                                            calendar UI (indexable)
+```
+1. **Scrape** ([scripts/](../scripts/)): `run-all.ts` drives per-site parsers in `parsers/`; `lib/extract.ts` uses Claude (Haiku) to turn page text into structured events; `lib/upsert.ts` writes them with `INSERT ... ON CONFLICT (id) DO UPDATE`. Dedup id = `hash(sourceUrl + title + startDate)`.
+2. **Store**: Neon Postgres; schema in [src/db/schema.ts](../src/db/schema.ts). Snapshot: [generated/db-schema.md](generated/db-schema.md).
+3. **Read path** (one chokepoint — reuse it):
+   [src/db/queries.ts](../src/db/queries.ts) `getAllEvents()` (filters `status='published'`)
+   → [src/lib/transform.ts](../src/lib/transform.ts) `toArtEvent()` (merges human overrides over scraped values)
+   → calendar components.
+   **Any new event query must reuse this path**, or it bypasses curation (hidden events leak, overrides ignored).
+
+## Folder map
+- `src/app/` — routes: `/` (calendar), `/about`, `/blog`, `/contact`, and `api/admin/upload` (image upload route)
+- `src/components/` — `calendar/`, `events/`, `filters/`, `layout/`, `mobile/`, `ui/`
+- `src/db/` — `schema.ts`, `queries.ts`, `index.ts` (Neon connection)
+- `src/lib/` — `transform.ts`, calendar logic, `cn`
+- `src/types/` — shared TS types
+- `scripts/` — scraper (cron) + DB utilities (`seed.ts`, `check-db.ts`)
+- `docs/` — this knowledge base
+
+## Editing pipeline (curation)
+Scraped events are treated as read-only data. Humans fix images/titles/descriptions and hide junk via **override columns + a `status` flag**, edited through **Retool** over Neon; replacement images are hosted on **Vercel Blob** via an auth-gated upload route. See [product/event-curation.md](product/event-curation.md), [references/vercel-blob.md](references/vercel-blob.md), [references/retool.md](references/retool.md).
+
+## Not built yet
+Blog content (planned: a Postgres `posts` table + SSR pages — [decision #0004](design/decisions.md)). Tracked in [exec-plans/active/admin-and-content-platform.md](exec-plans/active/admin-and-content-platform.md).

@@ -8,6 +8,10 @@ An informational portal for art events across Europe. The calendar is the main p
 
 **Data sources:** scraped daily from art event websites via a GitHub Actions cron job. Events are normalised and stored in a Neon (serverless Postgres) database using Drizzle ORM.
 
+## Documentation
+
+Start with **[AGENTS.md](AGENTS.md)** (how to build/run, constraints, landmines), then the **[`docs/`](docs/) knowledge base** — the system of record: [architecture](docs/ARCHITECTURE.md) · [decisions](docs/design/decisions.md) · [roadmap](docs/exec-plans/) · [event curation](docs/product/event-curation.md) · [integrations](docs/references/) · [security](docs/SECURITY.md).
+
 ---
 
 ## Folder structure
@@ -79,11 +83,11 @@ npm run db:push       # push schema directly (dev shortcut, skips migration file
 npm run db:studio     # open Drizzle Studio to browse data locally
 ```
 
-Migrations are stored in `drizzle/` and should be committed to the repo.
+> **Current reality:** this project applies schema with `npm run db:push` — there are **no** migration files yet, so the `generate`/`migrate` commands above are aspirational. See [decision #0005](docs/design/decisions.md). To adopt versioned migrations, baseline the existing schema first.
 
 ### Event pipeline
 
-Events are scraped daily by a GitHub Actions cron job (scripts to be added in `scripts/`). The scraper upserts rows using `INSERT ... ON CONFLICT (id) DO UPDATE`, so re-running never creates duplicates. The deduplication key is a hash of `sourceUrl + title + startDate`.
+Events are scraped daily by a GitHub Actions cron job (scripts live in `scripts/`). The scraper upserts rows using `INSERT ... ON CONFLICT (id) DO UPDATE`, so re-running never creates duplicates. The deduplication key is a hash of `sourceUrl + title + startDate`.
 
 ---
 
