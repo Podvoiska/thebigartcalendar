@@ -11,9 +11,11 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
-    "db:seed": "tsx scripts/seed.ts"
+    "db:seed": "tsx scripts/seed.ts",
+    "scrape": "tsx scripts/run-all.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.102.0",
     "@base-ui/react": "^1.5.0",
     "@neondatabase/serverless": "^1.1.0",
     "class-variance-authority": "^0.7.1",
