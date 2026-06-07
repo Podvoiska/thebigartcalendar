@@ -21,6 +21,17 @@ export const events = pgTable('events', {
   sourceName: text('source_name').notNull(),
   externalId: text('external_id'),
   scrapedAt: timestamp('scraped_at', { withTimezone: true }).defaultNow().notNull(),
+
+  // --- curation (written by the admin UI, never by the scraper) ---
+  status: text('status').notNull().default('published'), // 'published' | 'hidden' | 'pending'
+
+  // Human overrides — null means "use the scraped value above".
+  // Merged at read time in toArtEvent(); the scraper never writes these.
+  imageUrlOverride: text('image_url_override'),
+  titleOverride: text('title_override'),
+  descriptionOverride: text('description_override'),
+
+  curatedAt: timestamp('curated_at', { withTimezone: true }), // last manual edit
 });
 
 export type Event = typeof events.$inferSelect;

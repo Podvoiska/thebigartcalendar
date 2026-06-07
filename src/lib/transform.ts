@@ -4,7 +4,7 @@ import { type ArtEvent, type EventType } from '@/types';
 export function toArtEvent(row: Event): ArtEvent {
   return {
     id: row.id,
-    title: row.title,
+    title: row.titleOverride ?? row.title,
     type: row.type as EventType,
     date: row.startDate,
     endDate: row.endDate ?? undefined,
@@ -14,8 +14,8 @@ export function toArtEvent(row: Event): ArtEvent {
     city: row.city ?? '',
     country: row.country ?? '',
     address: row.address ?? '',
-    description: row.description ?? '',
-    image: row.imageUrl ?? undefined,
+    description: row.descriptionOverride ?? row.description ?? '',
+    image: row.imageUrlOverride ?? row.imageUrl ?? undefined,
     ticketsUrl: row.ticketsUrl ?? undefined,
     price: row.price ?? undefined,
     tags: row.tags ?? undefined,

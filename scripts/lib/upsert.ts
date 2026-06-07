@@ -22,6 +22,8 @@ export async function upsertEvents(newEvents: NewEvent[]): Promise<void> {
     .values(newEvents)
     .onConflictDoUpdate({
       target: events.id,
+      // ⚠️ Curation columns (status, *_override, curated_at) are intentionally
+      // absent below so manual edits survive the daily re-scrape. Do not add them.
       set: {
         title: sql`excluded.title`,
         type: sql`excluded.type`,
