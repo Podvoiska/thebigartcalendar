@@ -1,14 +1,49 @@
-import { extractEventsFromHtml } from '../lib/extract';
+import { extractEventsFromHtml, stripHtml } from '../lib/extract';
 import { upsertEvents } from '../lib/upsert';
 
-const URL = 'https://pinkdolphinlisbon.com/pages/eventsandcreativeworkshops';
+const BASE = 'https://pinkdolphinlisbon.com';
+const LISTING_URL = `${BASE}/pages/eventsandcreativeworkshops`;
+
+// Pink Dolphin's events page lists workshops but the dates and images live on
+// each individual product page, so we follow every /products/ link and pass the
+// combined content to Claude in one extraction call. (Mirrors nacre-creative.ts —
+// scraping the listing page alone yields no per-event images.)
 
 export async function run(): Promise<void> {
-  const res = await fetch(URL);
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const html = await res.text();
+  const listRes = await fetch(LISTING_URL);
+  if (!listRes.ok) throw new Error(`HTTP ${listRes.status}`);
+  const listHtml = await listRes.text();
 
-  const events = await extractEventsFromHtml(html, {
+  // Extract unique product paths, e.g. /products/sardine-scenes-collage-workshop
+  const productPaths = [
+    ...new Set(
+      [...listHtml.matchAll(/href="(\/products\/[^"?#]+)"/g)].map((m) => m[1]),
+    ),
+  ];
+
+  if (productPaths.length === 0) {
+    console.log('[Pink Dolphin] No product links found on listing page');
+    return;
+  }
+
+  console.log(`[Pink Dolphin] Found ${productPaths.length} product link(s) — fetching details…`);
+
+  // Fetch product pages with a small delay to be polite
+  const pages: { url: string; text: string }[] = [];
+  for (const path of productPaths) {
+    const url = `${BASE}${path}`;
+    const r = await fetch(url);
+    if (r.ok) pages.push({ url, text: stripHtml(await r.text()) });
+    await new Promise((resolve) => setTimeout(resolve, 300));
+  }
+
+  // Combine all pages into one pass for Claude, labelling each URL so it can
+  // set the correct sourceUrl per event.
+  const combined = pages
+    .map((p) => `[URL: ${p.url}]\n${p.text}`)
+    .join('\n\n---\n\n');
+
+  const events = await extractEventsFromHtml(combined, {
     sourceName: 'Pink Dolphin Lisbon',
     defaultCity: 'Lisbon',
     defaultCountry: 'Portugal',
